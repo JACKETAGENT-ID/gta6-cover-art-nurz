@@ -1,221 +1,193 @@
-// Neon Sunset Cover Maker — the editor glue: photos in, caption typed, panels
-// arranged, PNG out. The visitor's photos never leave their machine. Lettering
-// is heavy system sans (see cover.js), so there is no font file to load; the
-// sample scenes are drawn on a canvas at click time (see samples.js), so no
-// sample photo file ships with the app either. A `?shot=` query arranges a
-// fixed scene for a screenshot (see shots.js).
-import { drawCover, panelLayout } from './cover.js';
-import { makeSampleScene, SAMPLE_NAMES } from './samples.js';
+// Wires the Neon Sunset Cover Maker v2 page: photo slots, sample scenes,
+// caption fields, layout / grade / size picks, and the PNG export.
+//
+// State lives in one object and every control funnels through `refresh()`:
+// change a control, the preview canvas is repainted from the same state
+// the export uses, so what you see is what the PNG holds. A `?shot=`
+// query instead stages a fixed scene for a screenshot (see shots.js).
+import { renderPoster, EXPORT_SIZES, LAYOUTS, GRADES } from "./cover.js";
+import { makeSceneCanvas, SCENE_NAMES, SCENE_LABELS } from "./samples.js";
+import { stageShot } from "./shots.js";
 
-/** The three post sizes the app exports, in pixels. */
-const POST_SIZES = {
-  square: [1080, 1080],
-  portrait: [1080, 1350],
-  landscape: [1920, 1080],
-};
+const $ = (id) => document.getElementById(id);
 
-const canvas = document.getElementById('cover');
-const captionField = document.getElementById('caption');
-const subtitleField = document.getElementById('subtitle');
-const gradeField = document.getElementById('grade');
-const zoomField = document.getElementById('zoom');
-const statusLine = document.getElementById('status');
+const preview = $("preview");
+const note = $("note");
 
-/** Everything drawCover needs: three photo slots, which photo each panel
- *  shows, zoom and focus per panel, the words, the grade, the post size. */
-const editor = {
+const state = {
+  size: "square",
+  layout: "triptych",
+  grade: "sunset",
   photos: [null, null, null],
-  panelPhotos: [0, 0, 0],
-  zooms: [1, 1, 1],
-  focus: [{ x: 0.5, y: 0.4 }, { x: 0.5, y: 0.4 }, { x: 0.5, y: 0.4 }],
-  caption: captionField.value,
-  subtitle: subtitleField.value,
-  grade: gradeField.value,
-  size: 'square',
+  framings: [
+    { zoom: 1, dx: 0, dy: 0 },
+    { zoom: 1, dx: 0, dy: 0 },
+    { zoom: 1, dx: 0, dy: 0 },
+  ],
+  kicker: "Welcome to",
+  title: "Sunset Heist",
+  place: "Neon Bay",
 };
 
-/** Which panel the zoom slider and the drag gesture currently steer. */
-let activePanel = 0;
+let activeSlot = 0;
 
-function repaint() {
-  drawCover(canvas, editor);
-}
-
-/** Loads an image from a URL and resolves once it is drawable. */
-export function loadImage(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = url;
+function refresh() {
+  renderPoster(preview, state);
+  document.querySelectorAll(".slot-card").forEach((card, i) => {
+    card.classList.toggle("active", i === activeSlot);
+    card.classList.toggle("filled", Boolean(state.photos[i]));
   });
+  $("zoom").value = state.framings[activeSlot].zoom;
+  $("panx").value = state.framings[activeSlot].dx;
+  $("pany").value = state.framings[activeSlot].dy;
+  $("zoom-out").textContent = `${state.framings[activeSlot].zoom.toFixed(2)}×`;
 }
 
-/** System fonts need no loading; one ready-wait keeps the first paint honest. */
-async function settleFonts() {
-  await document.fonts.ready;
-  repaint();
+function say(text) {
+  note.textContent = text;
 }
 
-/** Switches the post size, resizes the live canvas, repaints. */
-function pickSize(name) {
-  editor.size = name;
-  const [w, h] = POST_SIZES[name];
-  canvas.width = w;
-  canvas.height = h;
-  for (const btn of document.querySelectorAll('.size-btn')) {
-    btn.classList.toggle('active', btn.id === `size-${name}`);
-  }
-  repaint();
+// --- Photo slots: upload a file, or paint a sample scene in. ---
+function loadFileIntoSlot(slot, file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    state.photos[slot] = img;
+    state.framings[slot] = { zoom: 1, dx: 0, dy: 0 };
+    URL.revokeObjectURL(url);
+    refresh();
+    say(`Photo ${slot + 1} loaded — drag the sliders to frame it.`);
+  };
+  img.onerror = () => say("That file could not be read as a photo.");
+  img.src = url;
 }
 
-/** Puts a loaded image into a photo slot and resets every zoom. */
-async function placePhoto(slot, url, label) {
-  try {
-    editor.photos[slot] = await loadImage(url);
-    editor.zooms = editor.zooms.map(() => 1);
-    statusLine.textContent = `${label} loaded into Photo ${slot + 1}.`;
-    repaint();
-  } catch {
-    statusLine.textContent = `Could not load ${label}.`;
-  }
+function paintSampleIntoSlot(slot, scene) {
+  state.photos[slot] = makeSceneCanvas(scene, 1080, 1080);
+  state.framings[slot] = { zoom: 1, dx: 0, dy: 0 };
+  refresh();
+  say(`${SCENE_LABELS[scene]} painted into photo ${slot + 1}.`);
 }
 
-/** Draws a named sample scene into a photo slot (a canvas, not a file). */
-function placeSample(slot, name) {
-  editor.photos[slot] = makeSampleScene(name);
-  editor.zooms = editor.zooms.map(() => 1);
-  statusLine.textContent = `${name} sample drawn into Photo ${slot + 1}.`;
-  repaint();
-}
-
-/** Drawn size of an image or canvas cover-filling `rect` at a zoom. */
-function fitSize(img, rect, zoom) {
-  const iw = img.naturalWidth || img.width;
-  const ih = img.naturalHeight || img.height;
-  const rw = rect[2] - rect[0];
-  const rh = rect[3] - rect[1];
-  const scale = Math.max(rw / iw, rh / ih) * zoom;
-  return [iw * scale, ih * scale, rw, rh];
-}
-
-/** Which panel a pointer position on the preview falls in, if any. */
-function panelAt(clientX, clientY) {
-  const box = canvas.getBoundingClientRect();
-  const x = ((clientX - box.left) / box.width) * canvas.width;
-  const y = ((clientY - box.top) / box.height) * canvas.height;
-  const { panels } = panelLayout(canvas.width, canvas.height);
-  const i = panels.findIndex(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
-  return i === -1 ? null : { index: i, x, y };
-}
-
-/** Wires every control once the page is up. */
-function bindEditor() {
-  for (let slot = 0; slot < 3; slot++) {
-    document.getElementById(`photo${slot}`).addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) placePhoto(slot, URL.createObjectURL(file), file.name);
-    });
-  }
-
-  for (const name of SAMPLE_NAMES) {
-    document.getElementById(`sample-${name}`).addEventListener('click', () => {
-      placeSample(0, name);
-    });
-  }
-
-  for (let i = 0; i < 3; i++) {
-    document.getElementById(`panel${i}`).addEventListener('change', (e) => {
-      editor.panelPhotos[i] = Number(e.target.value);
-      activePanel = i;
-      zoomField.value = Math.round(editor.zooms[i] * 100);
-      repaint();
-    });
-  }
-
-  zoomField.addEventListener('input', () => {
-    editor.zooms[activePanel] = Number(zoomField.value) / 100;
-    repaint();
+document.querySelectorAll(".slot-card").forEach((card) => {
+  const slot = Number(card.dataset.slot);
+  card.querySelector(".slot-pick").addEventListener("click", () => {
+    activeSlot = slot;
+    refresh();
   });
-
-  captionField.addEventListener('input', () => { editor.caption = captionField.value; repaint(); });
-  subtitleField.addEventListener('input', () => { editor.subtitle = subtitleField.value; repaint(); });
-  gradeField.addEventListener('change', () => { editor.grade = gradeField.value; repaint(); });
-
-  for (const name of Object.keys(POST_SIZES)) {
-    document.getElementById(`size-${name}`).addEventListener('click', () => pickSize(name));
-  }
-
-  document.getElementById('export').addEventListener('click', () => {
-    const [w, h] = POST_SIZES[editor.size];
-    const off = document.createElement('canvas');
-    off.width = w;
-    off.height = h;
-    drawCover(off, editor);
-    off.toBlob((blob) => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `neon-sunset-cover-${w}x${h}.png`;
-      a.click();
-      statusLine.textContent = `Saved neon-sunset-cover-${w}x${h}.png`;
-    }, 'image/png');
+  card.querySelector(".slot-file").addEventListener("change", (e) => {
+    loadFileIntoSlot(slot, e.target.files[0]);
+    e.target.value = "";
   });
+});
 
-  // Drag a panel on the preview to pan its photo inside the frame.
-  let drag = null;
-  canvas.addEventListener('pointerdown', (e) => {
-    const hit = panelAt(e.clientX, e.clientY);
-    if (!hit) return;
-    activePanel = hit.index;
-    zoomField.value = Math.round(editor.zooms[hit.index] * 100);
-    statusLine.textContent = `Panel ${'ABC'[hit.index]} selected — drag to pan, slider to zoom.`;
-    canvas.setPointerCapture(e.pointerId);
-    drag = { panel: hit.index, x: hit.x, y: hit.y };
+// Sample scene buttons fill the active slot.
+document.querySelectorAll("[data-scene]").forEach((button) => {
+  button.addEventListener("click", () => {
+    paintSampleIntoSlot(activeSlot, button.dataset.scene);
   });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!drag) return;
-    const hit = panelAt(e.clientX, e.clientY);
-    if (!hit) return;
-    const { panels } = panelLayout(canvas.width, canvas.height);
-    const rect = panels[drag.panel];
-    const img = editor.photos[editor.panelPhotos[drag.panel]];
-    if (!img) return;
-    const [pw, ph, rw, rh] = fitSize(img, rect, editor.zooms[drag.panel]);
-    const f = editor.focus[drag.panel];
-    if (pw > rw) f.x = Math.min(1, Math.max(0, f.x - (hit.x - drag.x) / (pw - rw)));
-    if (ph > rh) f.y = Math.min(1, Math.max(0, f.y - (hit.y - drag.y) / (ph - rh)));
-    drag.x = hit.x;
-    drag.y = hit.y;
-    repaint();
+});
+
+// Fill all three slots at once, one scene each, in scene order.
+$("fill-samples").addEventListener("click", () => {
+  SCENE_NAMES.forEach((scene, i) => paintSampleIntoSlot(i, scene));
+  say("All three sample scenes painted in.");
+});
+
+// --- Framing sliders for the active slot. ---
+$("zoom").addEventListener("input", (e) => {
+  state.framings[activeSlot].zoom = Number(e.target.value);
+  refresh();
+});
+$("panx").addEventListener("input", (e) => {
+  state.framings[activeSlot].dx = Number(e.target.value);
+  refresh();
+});
+$("pany").addEventListener("input", (e) => {
+  state.framings[activeSlot].dy = Number(e.target.value);
+  refresh();
+});
+
+// --- Caption fields. ---
+$("kicker").addEventListener("input", (e) => {
+  state.kicker = e.target.value;
+  refresh();
+});
+$("title").addEventListener("input", (e) => {
+  state.title = e.target.value;
+  refresh();
+});
+$("place").addEventListener("input", (e) => {
+  state.place = e.target.value;
+  refresh();
+});
+
+// --- Layout, grade and size radios. ---
+document.querySelectorAll('input[name="layout"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    state.layout = radio.value;
+    refresh();
   });
-  const endDrag = () => { drag = null; };
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
-}
+});
+document.querySelectorAll('input[name="grade"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    state.grade = radio.value;
+    refresh();
+  });
+});
+document.querySelectorAll('input[name="size"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    state.size = radio.value;
+    refresh();
+  });
+});
 
-bindEditor();
+// --- Export: repaint at full export size and download the PNG. ---
+$("export").addEventListener("click", () => {
+  const size = EXPORT_SIZES[state.size];
+  const off = document.createElement("canvas");
+  renderPoster(off, state);
+  off.toBlob((blob) => {
+    if (!blob) {
+      say("Export failed — try again.");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `neon-sunset-cover-${state.size}-${size.w}x${size.h}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    say(`Saved ${a.download}.`);
+  }, "image/png");
+});
 
-// Screenshot mode: ?shot= arranges a fixed scene, then flags readiness.
+// --- Fixed screenshot scenes: ?shot=cover or ?shot=editor. ---
 const params = new URLSearchParams(location.search);
-const shot = params.get('shot');
+const shot = params.get("shot");
 if (shot) {
-  await settleFonts();
-  const { runShot } = await import('./shots.js');
-  await runShot(shot, params, {
-    loadSamples: async (names) => {
-      for (let i = 0; i < names.length && i < 3; i++) {
-        editor.photos[i] = makeSampleScene(names[i]);
-        editor.panelPhotos[i] = i;
-        document.getElementById(`panel${i}`).value = String(i);
-      }
-    },
-    setCaption: (text) => { editor.caption = text; captionField.value = text; },
-    setSubtitle: (text) => { editor.subtitle = text; subtitleField.value = text; },
-    setGrade: (g) => { editor.grade = g; gradeField.value = g; },
-    setSize: (name) => pickSize(name),
-    redraw: repaint,
+  stageShot(shot, params, (scene) => {
+    const order = SCENE_NAMES.slice(SCENE_NAMES.indexOf(scene)).concat(
+      SCENE_NAMES.slice(0, SCENE_NAMES.indexOf(scene)),
+    );
+    order.forEach((name, i) => paintSampleIntoSlot(i, name));
+    state.layout = params.get("layout") ?? state.layout;
+    state.grade = params.get("grade") ?? state.grade;
+    state.size = params.get("size") ?? state.size;
+    state.title = params.get("caption") ?? state.title;
+    document.querySelector(`input[name="layout"][value="${state.layout}"]`).checked = true;
+    document.querySelector(`input[name="grade"][value="${state.grade}"]`).checked = true;
+    document.querySelector(`input[name="size"][value="${state.size}"]`).checked = true;
+    $("title").value = state.title;
+    refresh();
   });
 } else {
-  settleFonts();
-  repaint();
+  // First visit: paint the three sample scenes so the editor is alive.
+  SCENE_NAMES.forEach((scene, i) => paintSampleIntoSlot(i, scene));
+  refresh();
+  say("Three sample scenes painted in — swap any slot with your own photo.");
 }
+
+// Keep the option lists in sync with the modules, for the record.
+void LAYOUTS;
+void GRADES;

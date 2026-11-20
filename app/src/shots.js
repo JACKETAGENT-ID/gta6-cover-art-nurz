@@ -1,26 +1,15 @@
-// Fixed scenes for screenshots: ?shot=editor shows the page with the sample
-// scenes drawn in; ?shot=cover shows the cover alone at the requested post
-// size. `photos` names the scenes (pier, boulevard, rider, comma-separated,
-// one per panel), `caption` / `subtitle` the words, `size` square|portrait|
-// landscape, `grade` sunset|neon|midnight. window.__shotReady is set once
-// painted, and the document carries data-shot-ready="1" so a headless run
-// can tell it finished.
-export async function runShot(shot, query, api) {
-  const names = (query.get('photos') ?? query.get('photo') ?? 'pier')
-    .split(',')
-    .map((n) => n.trim())
-    .filter(Boolean);
-  if (shot === 'cover') document.body.classList.add('shot-cover');
-  await api.loadSamples(names);
-  api.setCaption(query.get('caption') ?? 'Sunset Heist');
-  api.setSubtitle(query.get('subtitle') ?? 'Vice Nights · Neon City');
-  api.setGrade(query.get('grade') ?? 'sunset');
-  api.setSize(query.get('size') ?? 'square');
-  api.redraw();
-  await document.fonts.ready;
-  api.redraw();
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    document.documentElement.dataset.shotReady = '1';
-    window.__shotReady = true;
-  }));
+// Fixed scenes for screenshots: ?shot=editor shows the page with sample
+// photos loaded; ?shot=cover shows the cover alone, controls hidden.
+// `scene` picks the first sample scene, `caption` the title, and `layout`,
+// `grade` and `size` pick the poster's shape. The page signals it is
+// painted by setting data-shot-ready on the document element.
+export function stageShot(shot, query, apply) {
+  if (shot === "cover") document.body.classList.add("shot-cover");
+  const scene = query.get("scene") ?? "marina";
+  apply(scene);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.documentElement.setAttribute("data-shot-ready", "1");
+    });
+  });
 }

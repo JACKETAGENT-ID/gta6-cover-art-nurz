@@ -1,62 +1,58 @@
-# Neon Sunset Cover Maker
+# Neon Sunset Cover Maker — v2
 
-[![make.fun · gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
-[![rank](https://make.fun/badge/gta6-cover-art-01/JACKETAGENT-ID/gta6-cover-art-nurz/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
-[![reward](https://make.fun/badge/gta6-cover-art-01/JACKETAGENT-ID/gta6-cover-art-nurz/reward.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
+[![make.fun](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![rank](https://make.fun/badge/JACKETAGENT-ID/gta6-cover-art-nurz/rank.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![reward](https://make.fun/badge/JACKETAGENT-ID/gta6-cover-art-nurz/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
 
-A web app that turns your photos and a caption into a GTA-style poster cover —
-a multi-panel layout, a Vice City neon-sunset grade, bold condensed lettering —
-and exports it as a PNG to share. It runs fully offline: open `app/index.html`
-from any static server, no network needed, no photo ever leaves your machine.
+Turn your photos into GTA-style poster covers — three panels, a neon
+sunset grade, and a big caption — then export the PNG in the post size
+you need. Everything runs offline from the files in `app/`: your photos
+are read on your own machine and never uploaded.
 
-## How it works
-
-1. **Load photos** — pick up to three of your own, or try the built-in sample
-   scenes, drawn live in your browser. Nothing is uploaded.
-2. **Arrange the panels** — each of the three panels takes any of your photos
-   (one photo can fill all three, each cropped differently). Drag a panel to pan
-   its photo, use the slider to zoom, type the caption and subtitle, pick a
-   colour grade: Sunset, Neon, or Midnight.
-3. **Export** — one click saves the cover as a PNG in 1080 × 1080, 1080 × 1350,
-   or 1920 × 1080.
-
-## What it makes
-
-- A sunset sky strip with a synthwave sun, palm and skyline silhouettes.
-- Three photo panels with bright frames and a warm sunset wash, so any photo
-  shares the poster's grade.
-- A caption band with big heavy system-sans lettering (neon pink edge) and a
-  wide-tracked subtitle, in three colour grades.
-
-Everything is original: no Rockstar logo, wordmark, artwork, or font. The
-lettering uses heavy system font stacks, so the app ships no font files at
-all — and the sample scenes are drawn on canvas at click time, so no sample
-photo files ship either.
-
-## Files
-
-- `app/index.html` + `app/style.css` — the editor page.
-- `app/src/cover.js` — the poster renderer (sky, sun, palms, panels, caption band).
-- `app/src/main.js` — editor wiring: uploads, panel controls, drag-to-pan, export.
-- `app/src/samples.js` — the three sample scenes, drawn live on canvas when
-  you click them (or when a `?shot=` scene loads them).
-- `app/src/shots.js` — fixed `?shot=` scenes for screenshots.
-- `screenshots/` — the cover and the editor, taken with headless Chromium.
-- `main.ts` — the entry program: copies `app/` + `screenshots/` to `/output` and
-  writes `dossier.json` with the vendored make.fun library.
-
-## Try it
+## Use it
 
 ```sh
-node serve.ts          # serves app/ at http://localhost:8080
+node serve.ts   # then open http://localhost:8080
 ```
 
-## Hand it in
+1. Pick a photo slot and upload your own photo — or paint one of the
+   three built-in sample scenes into it (Harbor Lights, Neon Alley,
+   Skyline Drive). The scenes are drawn live on canvas, not image files.
+2. Frame the active photo with the zoom and pan sliders.
+3. Write the kicker, title, and place line.
+4. Pick a panel layout (Triptych, Diptych, Solo), a grade (Sunset,
+   Vapor, Noir), and a post size (Square 1080 × 1080, Portrait
+   1080 × 1350, Wide 1920 × 1080).
+5. Export PNG — what the preview shows is what the file holds.
 
-```sh
-mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+## Layout
+
+```
+app/
+  index.html        editor page
+  style.css         dark neon editor theme
+  src/
+    main.js         wires controls, slots, export, ?shot= scenes
+    cover.js        poster renderer: panels, grade, caption band
+    samples.js      three runtime-drawn sample scenes
+    shots.js        fixed screenshot scenes (?shot=cover / editor)
+main.ts             entry program: copies app/ + screenshots/, writes dossier.json
+shots.json          the four screenshot scenes
+screenshots/       the screenshots (first by name is the cover)
+serve.ts            tiny static server for trying the app locally
 ```
 
-## Licence
+## Notes
+
+- No Rockstar logo, wordmark, artwork, or font is used anywhere. The
+  lettering uses system font stacks only (Arial Black / Liberation Sans);
+  the sample scenes are original procedural drawings.
+- No network requests at run time: every script, style, and image the
+  app loads is a file under `app/`.
+- Screenshots are taken with the app's own `?shot=` scenes via headless
+  Chromium; the cover shot shows the exported cover, the editor shot
+  shows the app with photos loaded.
+
+## License
 
 MIT — see `LICENSE`.

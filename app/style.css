@@ -1,14 +1,12 @@
-/* Neon Sunset Cover Maker — editor chrome in the same sunset palette as the covers it makes. */
 :root {
-  --ink: #f5eef7;
-  --ink-dim: #c9b8d4;
-  --panel: #241233;
-  --panel-2: #1a0d26;
-  --line: #4a2b5e;
-  --accent: #ff7a3d;
-  --accent-2: #ff3d8b;
-  --accent-3: #37e0ff;
-  --radius: 10px;
+  --ink: #f4eefc;
+  --muted: #b9a8d6;
+  --panel: #1d1030;
+  --panel-2: #241640;
+  --line: #3d2560;
+  --pink: #ff2e88;
+  --cyan: #22d3ee;
+  --amber: #ffb03d;
 }
 
 * { box-sizing: border-box; }
@@ -16,174 +14,220 @@
 html, body {
   margin: 0;
   min-height: 100%;
-  background: linear-gradient(160deg, #160a20 0%, #2b1038 45%, #3d1445 100%);
-  background-color: #160a20;
+  background: #12081f;
   color: var(--ink);
-  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 15px/1.45 "Liberation Sans", Arial, sans-serif;
 }
 
-.app {
+.topbar {
   display: flex;
-  gap: 28px;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 24px;
-  max-width: 1440px;
-  margin: 0 auto;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 20px 28px 8px;
+  flex-wrap: wrap;
 }
 
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 320px;
-  flex: none;
-}
-
-.controls h1 {
+.topbar h1 {
   margin: 0;
-  font-family: "Arial Black", "Liberation Sans", Arial, sans-serif;
-  font-weight: 900;
-  font-size: 30px;
-  line-height: 1.05;
-  letter-spacing: -0.5px;
+  font: 900 30px/1.1 "Arial Black", "Liberation Sans", Arial, sans-serif;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-}
-
-.controls h1 span {
-  display: block;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  background: linear-gradient(90deg, #ffd27a, #ff7a3d 45%, #ff2e88);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.tagline { margin: 0; color: var(--ink-dim); }
+.topbar p { margin: 6px 0 0; color: var(--muted); }
 
-fieldset {
+.badge {
   margin: 0;
-  padding: 14px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 24px;
+  padding: 16px 28px 28px;
+  align-items: start;
+}
+
+.panel {
   background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-legend {
-  padding: 0 6px;
-  font-weight: 700;
+.panel h2 {
+  margin: 8px 0 0;
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 12px;
-  color: var(--accent);
+  letter-spacing: 2px;
+  color: var(--amber);
 }
 
-label {
+.panel h3 { margin: 0 0 8px; font-size: 15px; }
+
+.hint { margin: 0; color: var(--muted); font-size: 13px; }
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.slot-card {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slot-card.active { border-color: var(--pink); box-shadow: 0 0 0 1px var(--pink); }
+.slot-card.filled h3::after { content: " ✓"; color: #7cf2a8; }
+
+.slot-card button {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.upload {
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.upload input { display: block; margin-top: 6px; width: 100%; font-size: 12px; }
+
+.samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.samples button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.samples button:hover, .slot-card button:hover { border-color: var(--cyan); }
+
+.slider, .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-label:last-child { margin-bottom: 0; }
-
-input[type="text"], select {
-  font: inherit;
-  color: var(--ink);
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 8px 10px;
-}
-
-input[type="file"] { font: inherit; font-weight: 400; }
-input[type="range"] { width: 100%; accent-color: var(--accent-2); }
-
-button {
-  font: inherit;
   font-weight: 700;
-  border: 0;
-  border-radius: 6px;
-  padding: 9px 12px;
-  cursor: pointer;
-  background: #3a2050;
+  font-size: 13px;
+}
+
+.slider span { color: var(--amber); font-weight: 400; }
+
+input[type="range"] { width: 100%; accent-color: var(--pink); }
+
+.field input[type="text"] {
+  font: inherit;
+  font-weight: 400;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #150a26;
   color: var(--ink);
 }
 
-button:hover { filter: brightness(1.15); }
-button:focus-visible, input:focus-visible, select:focus-visible {
-  outline: 2px solid var(--accent-3);
-  outline-offset: 2px;
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0;
 }
 
-.samples { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-.samples span { color: var(--ink-dim); font-size: 13px; }
-.samples button { padding: 6px 10px; font-size: 13px; }
+legend { font-size: 13px; font-weight: 700; color: var(--muted); padding: 0 6px; }
 
-.hint { margin: 8px 0 0; color: var(--ink-dim); font-size: 13px; font-weight: 400; }
+fieldset label { display: flex; gap: 6px; align-items: center; font-size: 14px; cursor: pointer; }
+fieldset input[type="radio"] { accent-color: var(--pink); }
 
-.sizes { display: flex; gap: 8px; flex-wrap: wrap; }
-.size-btn { flex: 1; white-space: nowrap; padding: 8px 6px; font-size: 13px; }
-.size-btn.active {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+#export {
+  font: 900 16px/1 "Arial Black", "Liberation Sans", Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 14px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #ff7a3d, #ff2e88);
   color: #fff;
+  cursor: pointer;
+  margin-top: 6px;
 }
 
-.export {
-  width: 100%;
-  margin-top: 12px;
-  padding: 12px;
-  font-size: 16px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(255, 61, 139, 0.45);
-}
+#export:hover { filter: brightness(1.12); }
 
-#status { margin: 8px 0 0; min-height: 1.2em; color: var(--accent-3); font-size: 13px; }
+#note { margin: 0; color: var(--muted); font-size: 13px; min-height: 19px; }
 
 .stage {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 10px;
+  align-items: center;
   position: sticky;
-  top: 24px;
+  top: 16px;
 }
 
 .stage canvas {
-  max-width: 100%;
-  max-height: calc(100vh - 90px);
+  width: min(100%, calc(100vh - 150px));
+  height: auto;
+  max-height: calc(100vh - 150px);
+  aspect-ratio: auto;
+  border-radius: 6px;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  border-radius: 4px;
-  background: #2b1038;
-  touch-action: none;
-  cursor: grab;
+  background: #0d0616;
 }
 
-.stage canvas:active { cursor: grabbing; }
-.stage-hint { margin: 0; color: var(--ink-dim); font-size: 13px; }
-
-@media (max-width: 900px) {
-  .app { flex-direction: column; }
-  .controls { width: 100%; }
-  .stage { position: static; width: 100%; }
-}
-
-/* Screenshot scenes: the cover fills the whole viewport, outside the flex layout. */
-body.shot-cover { overflow: hidden; }
-body.shot-cover .controls,
-body.shot-cover .stage-hint { display: none; }
-body.shot-cover .app { padding: 0; max-width: none; }
+body.shot-cover .topbar, body.shot-cover .panel { display: none; }
+body.shot-cover .app { display: block; padding: 0; }
 body.shot-cover .stage { position: static; }
-body.shot-cover canvas {
-  position: fixed;
-  inset: 0;
-  max-width: none;
-  max-height: none;
+body.shot-cover .stage canvas {
   width: 100vw;
   height: 100vh;
-  box-shadow: none;
+  max-height: none;
   border-radius: 0;
+  box-shadow: none;
+}
+body.shot-cover .stage .hint { display: none; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .stage { position: static; }
+  .stage canvas { max-height: none; }
 }

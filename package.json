@@ -1,1 +1,1 @@
-{"private":true,"scripts":{"build":"MAKEFUN_OUTPUT_DIR=out node main.ts","serve":"node serve.ts"},"type":"module"}
+{"description":"Neon Sunset Cover Maker — turn photos into GTA-style poster covers, offline in the browser.","license":"MIT","name":"neon-sunset-cover-maker","private":true,"scripts":{"build":"mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts","serve":"node serve.ts"},"type":"module","version":"2.0.0"}
