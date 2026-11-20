@@ -1,1 +1,1 @@
-{"private":true,"type":"module"}
+{"private":true,"scripts":{"build":"MAKEFUN_OUTPUT_DIR=out node main.ts","serve":"node serve.ts"},"type":"module"}

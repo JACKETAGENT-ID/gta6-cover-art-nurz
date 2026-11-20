@@ -1,7 +1,8 @@
 // Neon Sunset Cover Maker — draws the multi-panel GTA-style poster onto a canvas.
 // Own design: sunset sky strip with a synthwave sun, palm and skyline silhouettes,
 // three photo panels with white-hot gutters, and a bold caption band. No Rockstar
-// artwork, logo or font: lettering is Archivo Black + Oswald (OFL, under app/fonts/).
+// artwork, logo or font: the lettering is heavy system sans stacks, so the app
+// ships no font files at all.
 
 /** Colour grades: sky stops, sun, caption band, accents, photo tint. */
 export const GRADES = {
@@ -21,6 +22,12 @@ export const GRADES = {
     accent2: '#b48aff', tint: '#5a6fd0', placeholder: ['#141a3d', '#2c3a7a'],
   },
 };
+
+/** Lettering stacks — heavy system sans only, so the app ships no font files.
+ *  On Linux the bold weight resolves to Liberation Sans Bold; on macOS and
+ *  Windows the same stack lands on Arial Black / Arial Bold. */
+const DISPLAY_FONT = '"Arial Black", "Liberation Sans", Arial, sans-serif';
+const TEXT_FONT = '"Liberation Sans", Arial, Helvetica, sans-serif';
 
 /** Deterministic pseudo-random generator (seeded, so every render matches). */
 function mulberry32(seed) {
@@ -184,19 +191,19 @@ function drawPlaceholder(ctx, rect, grade, seed) {
   drawSun(ctx, x0 + rw * 0.68, y0 + rh * 0.34, Math.min(rw, rh) * 0.16, grade);
   drawPalm(ctx, x0 + rw * 0.12, y0 + rh * 0.96, rh * 0.5, -rw * 0.06, 'rgba(20,6,32,0.9)');
   ctx.fillStyle = 'rgba(255,255,255,0.75)';
-  ctx.font = `500 ${Math.max(14, rw * 0.045)}px Oswald, sans-serif`;
+  ctx.font = `700 ${Math.max(14, rw * 0.045)}px ${TEXT_FONT}`;
   ctx.textAlign = 'center';
   ctx.fillText('ADD PHOTO', x0 + rw / 2, y0 + rh * 0.62);
 }
 
-/** Fits the caption into at most two lines of Archivo Black, shrinking until
+/** Fits the caption into at most two lines of heavy display sans, shrinking until
  *  every line fits `maxWidth` and the whole block (lines + subtitle) fits
  *  `maxHeight` — a long single word shrinks too, never overflows the band. */
 function fitCaptionLines(ctx, text, maxWidth, startSize, maxHeight, subHeight) {
   const words = text.split(/\s+/).filter(Boolean);
   let size = startSize;
   while (size > 18) {
-    ctx.font = `${size}px "Archivo Black", sans-serif`;
+    ctx.font = `900 ${size}px ${DISPLAY_FONT}`;
     const lines = [];
     let line = '';
     for (const word of words) {
@@ -210,7 +217,7 @@ function fitCaptionLines(ctx, text, maxWidth, startSize, maxHeight, subHeight) {
     if (lines.length <= 2 && widest <= maxWidth && total <= maxHeight) return { lines, size };
     size = Math.floor(size * 0.92);
   }
-  ctx.font = `${size}px "Archivo Black", sans-serif`;
+  ctx.font = `900 ${size}px ${DISPLAY_FONT}`;
   return { lines: [text], size };
 }
 
@@ -277,23 +284,26 @@ export function drawCover(canvas, state) {
   // Neon edge: pink offset copy behind the white letters.
   ctx.fillStyle = grade.accent2;
   for (const line of lines) {
-    ctx.font = `${size}px "Archivo Black", sans-serif`;
+    ctx.font = `900 ${size}px ${DISPLAY_FONT}`;
     ctx.fillText(line, pad + size * 0.035, y + size * 0.035);
   }
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
   ctx.shadowBlur = size * 0.08;
   for (const line of lines) {
-    ctx.font = `${size}px "Archivo Black", sans-serif`;
+    ctx.font = `900 ${size}px ${DISPLAY_FONT}`;
     ctx.fillText(line, pad, y);
     y += lineH;
   }
   ctx.shadowBlur = 0;
   if (sub) {
-    ctx.font = `500 ${subSize}px Oswald, sans-serif`;
+    ctx.font = `600 ${subSize}px ${TEXT_FONT}`;
     try { ctx.letterSpacing = `${Math.max(2, subSize * 0.18)}px`; } catch { /* older canvas */ }
     ctx.fillStyle = grade.accent;
-    ctx.fillText(sub, pad, y + subSize * 0.4);
+    // The subtitle sits in its own slot at the foot of the text block, so a
+    // two-line title can never push it past the band's bottom edge.
+    const subBaseline = bandTop + (bandH - totalH) / 2 + lines.length * lineH + subSize * 1.3;
+    ctx.fillText(sub, pad, subBaseline);
     try { ctx.letterSpacing = '0px'; } catch { /* older canvas */ }
   }
 }

@@ -11,8 +11,8 @@ from any static server, no network needed, no photo ever leaves your machine.
 
 ## How it works
 
-1. **Load photos** — pick up to three of your own, or try the built-in illustrated
-   samples. Nothing is uploaded.
+1. **Load photos** — pick up to three of your own, or try the built-in sample
+   scenes, drawn live in your browser. Nothing is uploaded.
 2. **Arrange the panels** — each of the three panels takes any of your photos
    (one photo can fill all three, each cropped differently). Drag a panel to pan
    its photo, use the slider to zoom, type the caption and subtitle, pick a
@@ -25,21 +25,22 @@ from any static server, no network needed, no photo ever leaves your machine.
 - A sunset sky strip with a synthwave sun, palm and skyline silhouettes.
 - Three photo panels with bright frames and a warm sunset wash, so any photo
   shares the poster's grade.
-- A caption band with big Archivo Black lettering (neon pink edge) and an
-  Oswald subtitle, in three colour grades.
+- A caption band with big heavy system-sans lettering (neon pink edge) and a
+  wide-tracked subtitle, in three colour grades.
 
 Everything is original: no Rockstar logo, wordmark, artwork, or font. The
-lettering uses Archivo Black and Oswald, both under the SIL Open Font License,
-shipped as files in `app/fonts/` with their licence texts.
+lettering uses heavy system font stacks, so the app ships no font files at
+all — and the sample scenes are drawn on canvas at click time, so no sample
+photo files ship either.
 
 ## Files
 
 - `app/index.html` + `app/style.css` — the editor page.
 - `app/src/cover.js` — the poster renderer (sky, sun, palms, panels, caption band).
 - `app/src/main.js` — editor wiring: uploads, panel controls, drag-to-pan, export.
+- `app/src/samples.js` — the three sample scenes, drawn live on canvas when
+  you click them (or when a `?shot=` scene loads them).
 - `app/src/shots.js` — fixed `?shot=` scenes for screenshots.
-- `app/fonts/` — Archivo Black + Oswald (OFL).
-- `app/samples/` — three illustrated sample scenes, drawn with Pillow for this entry.
 - `screenshots/` — the cover and the editor, taken with headless Chromium.
 - `main.ts` — the entry program: copies `app/` + `screenshots/` to `/output` and
   writes `dossier.json` with the vendored make.fun library.
