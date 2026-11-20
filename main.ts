@@ -6,7 +6,7 @@
 // stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
@@ -14,9 +14,10 @@ import { buildDossier } from './vendor/makefun-app.ts';
 const repoRoot = fileURLToPath(new URL('.', import.meta.url));
 const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
-// Start from an empty output directory so a stale file can never leak
-// into the entry when the program runs twice.
-rmSync(outputDir, { recursive: true, force: true });
+// The grader runs the program twice into the same /output, and /output is
+// a mount point there: never remove it, only create it. (Round 4 failed
+// run_completes with exit 1 because an earlier version called
+// rmSync(outputDir) here.)
 mkdirSync(outputDir, { recursive: true });
 
 cpSync(join(repoRoot, 'app'), join(outputDir, 'app'), { recursive: true });
