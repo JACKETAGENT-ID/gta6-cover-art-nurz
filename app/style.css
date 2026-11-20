@@ -1,12 +1,187 @@
-html, body { margin: 0; height: 100%; background: #f2f0f4; color: #1d1b22; font: 15px/1.4 system-ui, sans-serif; }
-.app { display: flex; gap: 32px; align-items: center; justify-content: center; height: 100%; padding: 24px; box-sizing: border-box; }
-.controls { display: flex; flex-direction: column; gap: 14px; width: 280px; }
-.controls h1 { margin: 0; font-size: 28px; }
-.controls p { margin: 0; color: #5c5866; }
-label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
-input[type=text] { font: inherit; padding: 8px; border: 1px solid #c9c4d1; border-radius: 6px; }
-button { font: inherit; font-weight: 700; padding: 10px; border: 0; border-radius: 6px; background: #1d1b22; color: #fff; cursor: pointer; }
-canvas { width: min(70vh, 60vw); height: min(70vh, 60vw); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); }
-body.shot-cover .controls { display: none; }
-body.shot-cover .app { padding: 0; }
-body.shot-cover canvas { width: 100vw; height: 100vh; box-shadow: none; }
+/* Neon Sunset Cover Maker — editor chrome in the same sunset palette as the covers it makes. */
+:root {
+  --ink: #f5eef7;
+  --ink-dim: #c9b8d4;
+  --panel: #241233;
+  --panel-2: #1a0d26;
+  --line: #4a2b5e;
+  --accent: #ff7a3d;
+  --accent-2: #ff3d8b;
+  --accent-3: #37e0ff;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: linear-gradient(160deg, #160a20 0%, #2b1038 45%, #3d1445 100%);
+  background-color: #160a20;
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.app {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 320px;
+  flex: none;
+}
+
+.controls h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+}
+
+.controls h1 span {
+  display: block;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline { margin: 0; color: var(--ink-dim); }
+
+fieldset {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+legend {
+  padding: 0 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+label:last-child { margin-bottom: 0; }
+
+input[type="text"], select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+input[type="file"] { font: inherit; font-weight: 400; }
+input[type="range"] { width: 100%; accent-color: var(--accent-2); }
+
+button {
+  font: inherit;
+  font-weight: 700;
+  border: 0;
+  border-radius: 6px;
+  padding: 9px 12px;
+  cursor: pointer;
+  background: #3a2050;
+  color: var(--ink);
+}
+
+button:hover { filter: brightness(1.15); }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+}
+
+.samples { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.samples span { color: var(--ink-dim); font-size: 13px; }
+.samples button { padding: 6px 10px; font-size: 13px; }
+
+.hint { margin: 8px 0 0; color: var(--ink-dim); font-size: 13px; font-weight: 400; }
+
+.sizes { display: flex; gap: 8px; flex-wrap: wrap; }
+.size-btn { flex: 1; white-space: nowrap; padding: 8px 6px; font-size: 13px; }
+.size-btn.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #fff;
+}
+
+.export {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  font-size: 16px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(255, 61, 139, 0.45);
+}
+
+#status { margin: 8px 0 0; min-height: 1.2em; color: var(--accent-3); font-size: 13px; }
+
+.stage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: 24px;
+}
+
+.stage canvas {
+  max-width: 100%;
+  max-height: calc(100vh - 90px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  border-radius: 4px;
+  background: #2b1038;
+  touch-action: none;
+  cursor: grab;
+}
+
+.stage canvas:active { cursor: grabbing; }
+.stage-hint { margin: 0; color: var(--ink-dim); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .app { flex-direction: column; }
+  .controls { width: 100%; }
+  .stage { position: static; width: 100%; }
+}
+
+/* Screenshot scenes: the cover fills the whole viewport, outside the flex layout. */
+body.shot-cover { overflow: hidden; }
+body.shot-cover .controls,
+body.shot-cover .stage-hint { display: none; }
+body.shot-cover .app { padding: 0; max-width: none; }
+body.shot-cover .stage { position: static; }
+body.shot-cover canvas {
+  position: fixed;
+  inset: 0;
+  max-width: none;
+  max-height: none;
+  width: 100vw;
+  height: 100vh;
+  box-shadow: none;
+  border-radius: 0;
+}
